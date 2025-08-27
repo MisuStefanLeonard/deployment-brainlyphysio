@@ -48,7 +48,7 @@ services:
       retries: 10
 
   backend_brainlyphysio:
-    image: backend
+    # image: backend
     container_name: backend_brainlyphysio
     build:
       context: ./backend-brainlyphysio-repo/backend_brainlyphysio/backend
@@ -80,7 +80,7 @@ services:
     privileged: true
    
   frontend-brainlyphysio:
-    image: frontend
+    # image: frontend
     container_name: frontend-brainlyphysio
     build: 
       context: ./frontend-brainlyphysio-repo/frontend-brainlyphysio/frontend-brainlyphysio
