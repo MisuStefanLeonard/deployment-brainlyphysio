@@ -49,8 +49,8 @@ jobs:
             echo $SERVICES
             if [ -n "$SERVICES" ]; then
               echo "Rebuilding only changed services: $SERVICES"
-              docker-compose build $SERVICES
-              docker-compose up -d $SERVICES
+              docker compose build $SERVICES
+              docker compose up -d $SERVICES
             else
               echo "No services changed. Skipping build and up."
             fi
