@@ -1,4 +1,4 @@
-# 5
+# 2
 name: CI/CD pipeline for updating submodules
 on:
   push
