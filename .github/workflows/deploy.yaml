@@ -22,7 +22,7 @@ jobs:
       - name: Update via SSH
         run: |
           ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 ${{ secrets.USERNAME }}@${{ secrets.HOST }} <<'EOF'
-            cd deployment
+            cd deployment-brainlyphysio
             git pull
             SERVICES=""
             echo "Checking if frontend changed..."
