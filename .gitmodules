@@ -1,0 +1,6 @@
+[submodule "frontend-brainlyphysio-repo"]
+	path = frontend-brainlyphysio-repo
+	url = https://github.com/MisuStefanLeonard/frontend-brainlyphysio-repo.git
+[submodule "backend-brainlyphysio-repo"]
+	path = backend-brainlyphysio-repo
+	url = https://github.com/MisuStefanLeonard/backend-brainlyphysio-repo.git

@@ -1,0 +1,100 @@
+#16
+services:
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: npm
+    restart: always
+    ports:
+      - "80:80"
+      - "8181:81"
+      - "443:443"
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+  migrations:
+    container_name: migrations
+    build:
+      context: ./backend-brainlyphysio-repo/backend_brainlyphysio/backend
+      dockerfile: backend/Migrations.Dockerfile
+    restart: "no"                # run once and exit
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db # The service name 'db' is the hostname inside the Docker network
+      - DB_PORT=3306
+      - DB_USER=stefan12
+      - DB_PASSWORD=stefan12
+      - DB_NAME=BrainlyPhysioDb
+      - DOCKER=true
+
+  db:
+    image: mysql:latest
+    container_name: db_brainlyphysio
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootPass55@ # Change this to a secure password
+      MYSQL_DATABASE: BrainlyPhysioDb
+      MYSQL_USER: stefan12
+      MYSQL_PASSWORD: stefan12
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 10
+
+  backend_brainlyphysio:
+    image: backend
+    container_name: backend_brainlyphysio
+    build:
+      context: ./backend-brainlyphysio-repo/backend_brainlyphysio/backend
+      dockerfile: backend/Dockerfile
+      target: final
+    ports:
+      # HOST_PORT : MACHINE_PORT
+      - "5190:5190" 
+    expose:
+      - "5190"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=stefan12
+      - DB_PASSWORD=stefan12
+      - DB_NAME=BrainlyPhysioDb
+      - DOCKER=true
+    depends_on:
+      migrations:
+        condition: "service_completed_successfully"
+      db:
+        condition: "service_started"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5190/healthz"]
+      start_period: 1s
+      timeout: 10s
+      retries: 1
+    restart: always
+    privileged: true
+   
+  frontend-brainlyphysio:
+    image: frontend
+    container_name: frontend-brainlyphysio
+    build: 
+      context: ./frontend-brainlyphysio-repo/frontend-brainlyphysio/frontend-brainlyphysio
+      dockerfile: Dockerfile
+    environment:
+      - NUXT_HOST=0.0.0.0
+      - NUXT_PORT=3000
+      # - NODE_ENV=development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend_brainlyphysio
+    restart: "always"
+    privileged: true
+
+volumes:
+  db_data:

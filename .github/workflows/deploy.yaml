@@ -1,0 +1,57 @@
+# 5
+name: CI/CD pipeline for updating submodules
+on:
+  push
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TOKEN_GIT }}
+          submodules: recursive
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+
+      - name: Update via SSH
+        run: |
+          ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 ${{ secrets.USERNAME }}@${{ secrets.HOST }} <<'EOF'
+            cd deployment
+            git pull
+            SERVICES=""
+            echo "Checking if frontend changed..."
+            cd frontend-brainlyphysio-repo
+            PULL_OUTPUT_frontend=$(git pull)
+            if echo "$PULL_OUTPUT_frontend" | grep -q "Already up to date."; then
+              echo "No changes were pulled. Skipping build of frontend"
+            else
+              echo "Changes detected. Proceeding with build..."
+              echo "Adding frontend service to build process..."
+              SERVICES="$SERVICES frontend-brainlyphysio"
+            fi
+            cd ../backend-brainlyphysio-repo
+            echo "Checking if backend changed..."
+            PULL_OUTPUT_backend=$(git pull)
+            if echo "$PULL_OUTPUT_backend" | grep -q "Already up to date."; then
+              echo "No changes were pulled. Skipping build of backend"
+            else
+              echo "Changes detected. Proceeding with build..."
+              echo "Adding backend service to build process..."
+              SERVICES="$SERVICES backend_brainlyphysio"
+            fi
+            cd ..
+            echo $SERVICES
+            if [ -n "$SERVICES" ]; then
+              echo "Rebuilding only changed services: $SERVICES"
+              docker-compose build $SERVICES
+              docker-compose up -d $SERVICES
+            else
+              echo "No services changed. Skipping build and up."
+            fi
+          EOF
